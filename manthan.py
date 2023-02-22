@@ -55,7 +55,7 @@ from src.repair import *
 
 
 def logtime(inputfile, text):
-    with open(inputfile+"time_details", "a+") as f:
+    with open(inputfile+".time_details", "a+") as f:
         f.write(text + "\n")
     f.close()
 
@@ -70,7 +70,7 @@ def manthan():
         print("Number of universally quantified variables (X):", len(universally_quantified_vars))
         print("Number of existentially quantified variables (Y)", len(existentially_quantified_vars))
 
-    inputfile_name = args.input.split('/')[-1][:-8]
+    inputfile_name = os.path.basename(args.input)
     cnffile_name = tempfile.gettempdir()+"/"+inputfile_name+".cnf"
 
     cnfcontent = convertcnf(args.input, cnffile_name)
