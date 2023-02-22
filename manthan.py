@@ -54,11 +54,20 @@ from src.candidateSkolem import *
 from src.repair import *
 
 
-def logtime(inputfile, text):
-    with open(inputfile+".time_details", "a+") as f:
+def logtime(logfile, text):
+    with open(logfile, "a+") as f:
         f.write(text + "\n")
     f.close()
 
+def cleanup(outputfile):
+    """
+    Clean up existing output files.
+
+    Args:
+        outputfile (str): path to (possibly) existing output file.
+    """
+    if os.path.isfile(outputfile):
+        os.remove(outputfile)
 
 def manthan():
     if args.verbose:
@@ -72,6 +81,12 @@ def manthan():
 
     inputfile_name = os.path.basename(args.input)
     cnffile_name = tempfile.gettempdir()+"/"+inputfile_name+".cnf"
+    log_filename = inputfile_name + ".time_details"
+
+    # To prevent endless appending to the same file for reruns of the script,
+    # clean up old files:
+    if not args.no_cleanup:
+        cleanup(log_filename)
 
     cnfcontent = convertcnf(args.input, cnffile_name)
     cnfcontent = cnfcontent.strip("\n")+"\n"
@@ -86,7 +101,7 @@ def manthan():
             PosUnate = []
             NegUnate = []
         end_t = time.time()
-        logtime(inputfile_name, "preprocessing time:"+str(end_t-start_t))
+        logtime(log_filename, "preprocessing time:"+str(end_t-start_t))
 
         if args.verbose:
             print("count of positive unates", len(PosUnate))
@@ -118,7 +133,7 @@ def manthan():
         skolemfunction_preprocess(
             universally_quantified_vars, existentially_quantified_vars, PosUnate, NegUnate, [], '', inputfile_name)
         end_time = time.time()
-        logtime(inputfile_name, "totaltime:"+str(end_time-start_time))
+        logtime(log_filename, "totaltime:"+str(end_time-start_time))
         exit()
 
     dg = nx.DiGraph()  # dag to handle dependencies
@@ -129,7 +144,7 @@ def manthan():
         UniqueVars, UniqueDef = unique_function(
             qdimacs_list, universally_quantified_vars, existentially_quantified_vars, dg, Unates)
         end_t = time.time()
-        logtime(inputfile_name, "unique function finding:"+str(end_t-start_t))
+        logtime(log_filename, "unique function finding:"+str(end_t-start_t))
 
         if args.verbose:
             print("count of uniquely defined variables", len(UniqueVars))
@@ -150,7 +165,7 @@ def manthan():
             skolemfunction_preprocess(
                 universally_quantified_vars, existentially_quantified_vars, [], [], UniqueVars, UniqueDef, inputfile_name)
         end_time = time.time()
-        logtime(inputfile_name, "totaltime:"+str(end_time-start_time))
+        logtime(log_filename, "totaltime:"+str(end_time-start_time))
         exit()
 
     # we need verilog file for repairing the candidates, hence first let us convert the qdimacs to verilog
@@ -200,7 +215,7 @@ def manthan():
             args, num_samples, sampling_cnf, inputfile_name, 0)
 
     end_t = time.time()
-    logtime(inputfile_name, "generating samples:"+str(end_t-start_t))
+    logtime(log_filename, "generating samples:"+str(end_t-start_t))
 
     print("generated samples.. learning candidate functions")
     start_t = time.time()
@@ -209,7 +224,7 @@ def manthan():
         universally_quantified_vars, existentially_quantified_vars, UniqueVars, PosUnate, NegUnate, samples, dg, ng, args)
 
     end_t = time.time()
-    logtime(inputfile_name, "candidate learning:"+str(end_t-start_t))
+    logtime(log_filename, "candidate learning:"+str(end_t-start_t))
 
     YvarOrder = np.array(list(nx.topological_sort(dg)))
 
@@ -279,8 +294,8 @@ def manthan():
             print("could not synthesize functions")
             break
     end_time = time.time()
-    logtime(inputfile_name, "repair time:"+str(end_time-start_t))
-    logtime(inputfile_name, "totaltime:"+str(end_time-start_time))
+    logtime(log_filename, "repair time:"+str(end_time-start_t))
+    logtime(log_filename, "totaltime:"+str(end_time-start_time))
 
 
 if __name__ == "__main__":
@@ -311,6 +326,8 @@ if __name__ == "__main__":
     parser.add_argument("--clustersize", type=int,
                         default=8, dest='clustersize')
     parser.add_argument("--unique", type=int, help="0 ,1 ", default=1, dest='unique')
+    parser.add_argument("--no-cleanup", action='store_true', default=False,
+                        help="Do not clean up earlier created output files for this problem instance.")
     parser.add_argument("input", help="input file")
     args = parser.parse_args()
     print("starting Manthan")
