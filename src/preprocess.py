@@ -70,6 +70,9 @@ def parse(inputfile):
 
 
 def convertcnf(inputfile, cnffile_name):
+	"""
+
+	"""
 	with open(inputfile,"r") as f:
 		cnfcontent = f.read()
 	f.close()
@@ -84,7 +87,16 @@ def convertcnf(inputfile, cnffile_name):
 
 
 def preprocess(cnffile_name):
+	"""
+	Calls ApproxMC(?) (./dependencies/preprocess) on converted CNF file.
 
+	Parameters:
+		cnffile_name (str): Temporary file name of the converted CNF file.
+
+	Returns:
+		PosUnate (list): List of indices of the positive unate variables.
+		NegUnate (list): List of indices of the negative unate variables.
+	"""
 	cmd = "./dependencies/preprocess %s " % (cnffile_name)
 	with Popen(cmd, shell=True, stdout=PIPE, preexec_fn=os.setsid) as process:
 		try:
