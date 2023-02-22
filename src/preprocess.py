@@ -36,8 +36,8 @@ def parse(inputfile):
 		lines = f.readlines()
 	f.close()
 
-	Xvar = []
-	Yvar = []
+	universally_quantified_vars = []
+	existentially_quantified_vars = []
 
 	qdimacs_list = []
 	for line in lines:
@@ -48,10 +48,10 @@ def parse(inputfile):
 		if line.startswith("p"):
 			continue
 		if line.startswith("a"):
-			Xvar += line.strip("a").strip("\n").strip(" ").split(" ")[:-1]
+			universally_quantified_vars += line.strip("a").strip("\n").strip(" ").split(" ")[:-1]
 			continue
 		if line.startswith("e"):
-			Yvar += line.strip("e").strip("\n").strip(" ").split(" ")[:-1]
+			existentially_quantified_vars += line.strip("e").strip("\n").strip(" ").split(" ")[:-1]
 			continue
 		clause = line.strip(" ").strip("\n").strip(" ").split(" ")[:-1]
 
@@ -59,14 +59,14 @@ def parse(inputfile):
 			clause = list(map(int, list(clause)))
 			qdimacs_list.append(clause)
 
-	if (len(Xvar) == 0) or (len(Yvar) == 0) or (len(qdimacs_list) == 0):
-		print("problem with the files, can not synthesis Skolem functions")
+	assert len(universally_quantified_vars) > 0, "Please specify the universally quantified variables X."
+	assert len(existentially_quantified_vars) > 0, "Please specify the existentially quantified variables Y."
+	assert len(qdimacs_list) > 0, "Please specify clauses."
 	
-	
-	Xvar = list(map(int, list(Xvar)))
-	Yvar = list(map(int, list(Yvar)))
+	universally_quantified_vars = list(map(int, list(universally_quantified_vars)))
+	existentially_quantified_vars = list(map(int, list(existentially_quantified_vars)))
 
-	return Xvar, Yvar, qdimacs_list
+	return universally_quantified_vars, existentially_quantified_vars, qdimacs_list
 
 
 def convertcnf(inputfile, cnffile_name):

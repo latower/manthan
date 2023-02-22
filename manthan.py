@@ -61,13 +61,14 @@ def logtime(inputfile, text):
 
 
 def manthan():
-    print("parsing")
+    if args.verbose:
+        print("Parsing")
     start_time = time.time()
-    Xvar, Yvar, qdimacs_list = parse(args.input)
+    universally_quantified_vars, existentially_quantified_vars, qdimacs_list = parse(args.input)
 
     if args.verbose:
-        print("count X variables", len(Xvar))
-        print("count Y variables", len(Yvar))
+        print("Number of universally quantified variables (X):", len(universally_quantified_vars))
+        print("Number of existentially quantified variables (Y)", len(existentially_quantified_vars))
 
     inputfile_name = args.input.split('/')[-1][:-8]
     cnffile_name = tempfile.gettempdir()+"/"+inputfile_name+".cnf"
@@ -78,10 +79,10 @@ def manthan():
     if args.preprocess:
         print("preprocessing: finding unates (constant functions)")
         start_t = time.time()
-        if len(Yvar) < 20000:
+        if len(existentially_quantified_vars) < 20000:
             PosUnate, NegUnate = preprocess(cnffile_name)
         else:
-            print("too many Y variables, let us proceed with Unique extraction\n")
+            print("Too many existentially quantified variables (Y), let us proceed with Unique extraction\n")
             PosUnate = []
             NegUnate = []
         end_t = time.time()
@@ -96,13 +97,13 @@ def manthan():
 
         Unates = PosUnate + NegUnate
 
-        for yvar in PosUnate:
-            qdimacs_list.append([yvar])
-            cnfcontent += "%s 0\n" % (yvar)
+        for eq_var in PosUnate:
+            qdimacs_list.append([eq_var])
+            cnfcontent += "%s 0\n" % (eq_var)
 
-        for yvar in NegUnate:
-            qdimacs_list.append([-1 * int(yvar)])
-            cnfcontent += "-%s 0\n" % (yvar)
+        for eq_var in NegUnate:
+            qdimacs_list.append([-1 * int(eq_var)])
+            cnfcontent += "-%s 0\n" % (eq_var)
 
     else:
         Unates = []
@@ -110,12 +111,12 @@ def manthan():
         NegUnate = []
         print("preprocessing is disabled. To do preprocessing, please use --preprocess")
 
-    if len(Unates) == len(Yvar):
+    if len(Unates) == len(existentially_quantified_vars):
         print(PosUnate)
         print(NegUnate)
-        print("all Y variables are unates and have constant functions")
+        print("All existentially quantified variables (Y) are unates and have constant functions")
         skolemfunction_preprocess(
-            Xvar, Yvar, PosUnate, NegUnate, [], '', inputfile_name)
+            universally_quantified_vars, existentially_quantified_vars, PosUnate, NegUnate, [], '', inputfile_name)
         end_time = time.time()
         logtime(inputfile_name, "totaltime:"+str(end_time-start_time))
         exit()
@@ -126,7 +127,7 @@ def manthan():
         print("finding uniquely defined functions")
         start_t = time.time()
         UniqueVars, UniqueDef = unique_function(
-            qdimacs_list, Xvar, Yvar, dg, Unates)
+            qdimacs_list, universally_quantified_vars, existentially_quantified_vars, dg, Unates)
         end_t = time.time()
         logtime(inputfile_name, "unique function finding:"+str(end_t-start_t))
 
@@ -139,15 +140,15 @@ def manthan():
         UniqueDef = ''
         print("finding unique function is disabled. To find unique functions please use -- unique")
 
-    if len(Unates) + len(UniqueVars) == len(Yvar):
-        print("all Y variables are either unate or unique")
-        print("found functions for all Y variables")
+    if len(Unates) + len(UniqueVars) == len(existentially_quantified_vars):
+        print("All existentially quantified variables (Y) are either unate or unique.")
+        print("Found functions for all existentially quantified variables (Y).")
         if args.preprocess:
             skolemfunction_preprocess(
-                Xvar, Yvar, PosUnate, NegUnate, UniqueVars, UniqueDef, inputfile_name)
+                universally_quantified_vars, existentially_quantified_vars, PosUnate, NegUnate, UniqueVars, UniqueDef, inputfile_name)
         else:
             skolemfunction_preprocess(
-                Xvar, Yvar, [], [], UniqueVars, UniqueDef, inputfile_name)
+                universally_quantified_vars, existentially_quantified_vars, [], [], UniqueVars, UniqueDef, inputfile_name)
         end_time = time.time()
         logtime(inputfile_name, "totaltime:"+str(end_time-start_time))
         exit()
@@ -160,11 +161,11 @@ def manthan():
 
     sampling_cnf = cnfcontent
     if not args.maxsamples:
-        if len(Xvar) > 4000:
+        if len(universally_quantified_vars) > 4000:
             num_samples = 1000
-        if (len(Xvar) > 1200) and (len(Xvar) <= 4000):
+        if (len(universally_quantified_vars) > 1200) and (len(universally_quantified_vars) <= 4000):
             num_samples = 5000
-        if len(Xvar) <= 1200:
+        if len(universally_quantified_vars) <= 1200:
             num_samples = 10000
     else:
         num_samples = args.maxsamples
@@ -172,21 +173,21 @@ def manthan():
     if args.weighted:
         sampling_weights_y_1 = ''
         sampling_weights_y_0 = ''
-        for xvar in Xvar:
-            sampling_cnf += "w %s 0.5\n" % (xvar)
-        for yvar in Yvar:
-            if yvar in UniqueVars:
-                sampling_cnf += "w %s 0.5\n" % (yvar)
+        for uq_var in universally_quantified_vars:
+            sampling_cnf += "w %s 0.5\n" % (uq_var)
+        for eq_var in existentially_quantified_vars:
+            if eq_var in UniqueVars:
+                sampling_cnf += "w %s 0.5\n" % (eq_var)
                 continue
-            if (yvar in PosUnate) or (yvar in NegUnate):
+            if (eq_var in PosUnate) or (eq_var in NegUnate):
                 continue
 
-            sampling_weights_y_1 += "w %s 0.9\n" % (yvar)
-            sampling_weights_y_0 += "w %s 0.1\n" % (yvar)
+            sampling_weights_y_1 += "w %s 0.9\n" % (eq_var)
+            sampling_weights_y_0 += "w %s 0.1\n" % (eq_var)
 
         if args.adaptivesample:
             weighted_sampling_cnf = computeBias(
-                Xvar, Yvar, sampling_cnf, sampling_weights_y_1, sampling_weights_y_0, inputfile_name, Unates + UniqueVars, args)
+                universally_quantified_vars, existentially_quantified_vars, sampling_cnf, sampling_weights_y_1, sampling_weights_y_0, inputfile_name, Unates + UniqueVars, args)
         else:
             weighted_sampling_cnf = sampling_cnf + sampling_weights_y_1
 
@@ -205,22 +206,22 @@ def manthan():
     start_t = time.time()
 
     candidateSkf, dg = learnCandidate(
-        Xvar, Yvar, UniqueVars, PosUnate, NegUnate, samples, dg, ng, args)
+        universally_quantified_vars, existentially_quantified_vars, UniqueVars, PosUnate, NegUnate, samples, dg, ng, args)
 
     end_t = time.time()
     logtime(inputfile_name, "candidate learning:"+str(end_t-start_t))
 
     YvarOrder = np.array(list(nx.topological_sort(dg)))
 
-    assert(len(Yvar) == len(YvarOrder))
+    assert(len(existentially_quantified_vars) == len(YvarOrder))
 
-    createSkolem(candidateSkf, Xvar, Yvar, UniqueVars,
+    createSkolem(candidateSkf, universally_quantified_vars, existentially_quantified_vars, UniqueVars,
                  UniqueDef, inputfile_name)
 
-    error_content = createErrorFormula(Xvar, Yvar, UniqueVars, verilogformula)
+    error_content = createErrorFormula(universally_quantified_vars, existentially_quantified_vars, UniqueVars, verilogformula)
 
     maxsatWt, maxsatcnf, cnfcontent = maxsatContent(
-        cnfcontent, (len(Xvar)+len(Yvar)), (len(PosUnate)+len(NegUnate)))
+        cnfcontent, (len(universally_quantified_vars)+len(existentially_quantified_vars)), (len(PosUnate)+len(NegUnate)))
 
     countRefine = 0
 
@@ -228,7 +229,7 @@ def manthan():
 
     while True:
         addSkolem(error_content, inputfile_name)
-        check, sigma, ret = verify(Xvar, Yvar, inputfile_name)
+        check, sigma, ret = verify(universally_quantified_vars, existentially_quantified_vars, inputfile_name)
         if check == 0:
             print("error --- ABC network read fail")
             break
@@ -236,7 +237,7 @@ def manthan():
             print("verification check UNSAT")
             print("no more repair needed")
             print("number of repairs needed to converge", countRefine)
-            createSkolemfunction(inputfile_name, Xvar, Yvar)
+            createSkolemfunction(inputfile_name, universally_quantified_vars, existentially_quantified_vars)
             break
         if ret == 1:
             countRefine += 1
@@ -246,10 +247,10 @@ def manthan():
                 print("finding candidates to repair using maxsat")
 
             repaircnf, maxsatcnfRepair = addXvaluation(
-                cnfcontent, maxsatWt, maxsatcnf, sigma[0], Xvar)
+                cnfcontent, maxsatWt, maxsatcnf, sigma[0], universally_quantified_vars)
 
             ind = callMaxsat(
-                maxsatcnfRepair, sigma[2], UniqueVars, Unates, Yvar, YvarOrder, inputfile_name, args.weightedmaxsat)
+                maxsatcnfRepair, sigma[2], UniqueVars, Unates, existentially_quantified_vars, YvarOrder, inputfile_name, args.weightedmaxsat)
 
             assert(len(ind) > 0)
 
@@ -260,19 +261,19 @@ def manthan():
                 print("variables undergoing refinement", ind)
 
             lexflag, repairfunctions = repair(
-                repaircnf, ind, Xvar, Yvar, YvarOrder, UniqueVars, Unates, sigma, inputfile_name, args, args.lexmaxsat)
+                repaircnf, ind, universally_quantified_vars, existentially_quantified_vars, YvarOrder, UniqueVars, Unates, sigma, inputfile_name, args, args.lexmaxsat)
 
             if lexflag:
                 print("calling rc2 to find another set of candidates to repair")
                 ind = callRC2(maxsatcnfRepair,
-                              sigma[2], UniqueVars, Unates, Yvar, YvarOrder)
+                              sigma[2], UniqueVars, Unates, existentially_quantified_vars, YvarOrder)
                 assert(len(ind) > 0)
                 if args.verbose == 1:
                     print("number of candidates undergoing repair iterations", len(ind))
                 lexflag, repairfunctions = repair(
-                    repaircnf, ind, Xvar, Yvar, YvarOrder, UniqueVars, Unates, sigma, inputfile_name, args, 0)
+                    repaircnf, ind, universally_quantified_vars, existentially_quantified_vars, YvarOrder, UniqueVars, Unates, sigma, inputfile_name, args, 0)
             updateSkolem(repairfunctions, countRefine,
-                         sigma[2], inputfile_name, Yvar)
+                         sigma[2], inputfile_name, existentially_quantified_vars)
         if countRefine > args.maxrepairitr:
             print("number of maximum allowed repair iteration reached")
             print("could not synthesize functions")
