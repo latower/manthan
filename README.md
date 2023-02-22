@@ -48,8 +48,11 @@ Now, clone Manthan
 ```
 git clone https://github.com/meelgroup/manthan
 cd manthan
-cp ../unique/build/interpolatingsolver/src/itp.cpython-38-x86_64-linux-gnu.so itp.so
+ln -s ../unique/build/interpolatingsolver/src/itp.cpython-38-x86_64-linux-gnu.so itp.so
 ```
+
+Note: the exact file name of the `.so` file in the last line may vary, depending on your version of `Python`.
+
 ## How to Use
 
 ```bash
