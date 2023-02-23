@@ -59,6 +59,7 @@ def logtime(logfile, text):
         f.write(text + "\n")
     f.close()
 
+
 def cleanup(outputfile):
     """
     Clean up existing output files.
@@ -68,6 +69,7 @@ def cleanup(outputfile):
     """
     if os.path.isfile(outputfile):
         os.remove(outputfile)
+
 
 def manthan():
     if args.verbose:
@@ -80,7 +82,12 @@ def manthan():
         print("Number of existentially quantified variables (Y)", len(existentially_quantified_vars))
 
     inputfile_name = os.path.basename(args.input)
+
+    # File name of CNF that is converted such that it can be used as input for
+    # the preprocess step (extracting unates):
     cnffile_name = tempfile.gettempdir()+"/"+inputfile_name+".cnf"
+
+    # File name for logging the running times of different steps:
     log_filename = inputfile_name + ".time_details"
 
     # To prevent endless appending to the same file for reruns of the script,
@@ -88,6 +95,7 @@ def manthan():
     if not args.no_cleanup:
         cleanup(log_filename)
 
+    # Convert the input CNF such that it can be processed by the preprocessing script:
     cnfcontent = convertcnf(args.input, cnffile_name)
     cnfcontent = cnfcontent.strip("\n")+"\n"
 
