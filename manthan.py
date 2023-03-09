@@ -87,7 +87,7 @@ def manthan():
     # the preprocess step (extracting unates):
     cnffile_name = tempfile.gettempdir()+"/"+inputfile_name+".cnf"
 
-    # File name for logging the running times of different steps:
+    # File name for logging the runnin
     log_filename = inputfile_name + ".time_details"
 
     # To prevent endless appending to the same file for reruns of the script,

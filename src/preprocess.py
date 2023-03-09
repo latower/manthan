@@ -97,7 +97,9 @@ def preprocess(cnffile_name):
 		PosUnate (list): List of indices of the positive unate variables.
 		NegUnate (list): List of indices of the negative unate variables.
 	"""
-	cmd = "./dependencies/preprocess %s " % (cnffile_name)
+	manthan_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+	print(manthan_dir)
+	cmd = f"{manthan_dir}/dependencies/preprocess %s " % (cnffile_name)
 	with Popen(cmd, shell=True, stdout=PIPE, preexec_fn=os.setsid) as process:
 		try:
 			output = process.communicate(timeout=500)[0]
@@ -110,9 +112,11 @@ def preprocess(cnffile_name):
 		else:
 			PosUnate = []
 			NegUnate = []
-			exists = os.path.isfile(cnffile_name + "_vardetails")
+
+			vardetails_filename = cnffile_name.replace('.qdimacs.cnf', '') + "_vardetails"
+			exists = os.path.isfile(vardetails_filename)
 			if exists:
-				with open(cnffile_name + "_vardetails", 'r') as f:
+				with open(vardetails_filename, 'r') as f:
 					lines = f.readlines()
 				f.close()
 
@@ -127,8 +131,9 @@ def preprocess(cnffile_name):
 						if neg != "":
 							NegUnate = list(map(int, list(neg.split(" "))))
 						continue
-				os.unlink(cnffile_name + "_vardetails")
+				os.unlink(vardetails_filename)
 			else:
+				# TODO: figure out what is happening here and how to return a more helpful error message.
 				print("preprocessing error .. contining ")
 				exit()
 			return PosUnate, NegUnate
