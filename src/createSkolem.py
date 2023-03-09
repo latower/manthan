@@ -47,9 +47,6 @@ def skolemfunction_preprocess(Xvar,Yvar,PosUnate,NegUnate, UniqueVar, UniqueDef,
 			assign += "assign o%s = w%s;\n" %(var,var)
 			wire += "wire w%s;\n" %(var)
 
-	declare = declare.strip(", ")+");\n"
-	skolemformula = declare + declarevar + wire + UniqueDef + assign + "endmodule\n"
-
 	skolemformula = tempfile.gettempdir() + '/' + inputfile_name + "_skolem.v"
 
 	with open(skolemformula,"w") as f:
