@@ -27,19 +27,10 @@ import os
 import numpy as np
 
 def skolemfunction_preprocess(Xvar,Yvar,PosUnate,NegUnate, UniqueVar, UniqueDef, inputfile_name):
-	print("******** skolemfunction_preprocess ******")
 	declare = 'module SkolemFormula ('
 	declarevar = ''
 	assign = ''
 	wire = ''
-
-	print('PosUnate:', PosUnate)
-	print('NegUnate:', NegUnate)
-
-	print('Xvar:', Xvar)
-	print('Yvar:', Yvar)
-
-	print('UniqueVar:', UniqueVar)
 
 	for var in Xvar:
 		declare += "i%s, " %(var)
