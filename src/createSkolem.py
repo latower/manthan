@@ -27,10 +27,19 @@ import os
 import numpy as np
 
 def skolemfunction_preprocess(Xvar,Yvar,PosUnate,NegUnate, UniqueVar, UniqueDef, inputfile_name):
+	print("******** skolemfunction_preprocess ******")
 	declare = 'module SkolemFormula ('
 	declarevar = ''
 	assign = ''
 	wire = ''
+
+	print('PosUnate:', PosUnate)
+	print('NegUnate:', NegUnate)
+
+	print('Xvar:', Xvar)
+	print('Yvar:', Yvar)
+
+	print('UniqueVar:', UniqueVar)
 
 	for var in Xvar:
 		declare += "i%s, " %(var)
@@ -40,21 +49,24 @@ def skolemfunction_preprocess(Xvar,Yvar,PosUnate,NegUnate, UniqueVar, UniqueDef,
 		declare += "o%s, " %(var)
 		declarevar += "output o%s;\n" %(var)
 		if var in PosUnate:
-			assign += "o%s = 1'b1;\n" %(var)
+			assign += "assign o%s = 1'b1;\n" %(var)
 		if var in NegUnate:
 			assign += "assign o%s = 1'b0;\n" %(var)
 		if var in UniqueVar:
 			assign += "assign o%s = w%s;\n" %(var,var)
 			wire += "wire w%s;\n" %(var)
 
-	skolemformula = tempfile.gettempdir() + '/' + inputfile_name + "_skolem.v"
+	declare = declare.strip(", ")+");\n"
+	skolemformula = declare + declarevar + wire + UniqueDef + assign + "endmodule\n"
 
-	with open(skolemformula,"w") as f:
+	skolemformula_file = tempfile.gettempdir() + '/' + inputfile_name + "_skolem.v"
+
+	with open(skolemformula_file,"w") as f:
 		f.write(skolemformula)
-	f.close()
-	cmd = "./dependencies/file_write_aig %s %s   > /dev/null 2>&1 " % (skolemformula, skolemformula.split("_skolem.v")[0]+"_skolem.aig")
+
+	manthan_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+	cmd = f"{manthan_dir}/dependencies/file_write_aig %s %s   > /dev/null 2>&1 " % (skolemformula_file, inputfile_name + "_skolem.aig")
 	os.system(cmd)
-	os.system("cp %s %s" %(skolemformula.split("_skolem.v")[0]+"_skolem.aig", inputfile_name + "_skolem.aig"))
 
 def createSkolemfunction(inputfile_name, Xvar,Yvar):
 	skolemformula = tempfile.gettempdir() + '/' + inputfile_name + "_skolem.v"
@@ -97,7 +109,8 @@ def createSkolemfunction(inputfile_name, Xvar,Yvar):
 		f.write(declare + declare_input + content + assign + "endmodule\n")
 	f.close()
 
-	cmd = "./dependencies/file_write_aig %s %s  > /dev/null 2>&1  " % (skolemformula, skolemformula.split("_skolem.v")[0]+"_skolem.aig")
+	manthan_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+	cmd = f"{manthan_dir}/dependencies/file_write_aig %s %s  > /dev/null 2>&1  " % (skolemformula, skolemformula.split("_skolem.v")[0]+"_skolem.aig")
 	os.system(cmd)
 	os.system("cp %s %s" %(skolemformula.split("_skolem.v")[0]+"_skolem.aig", inputfile_name + "_skolem.aig"))
 	os.unlink(skolemformula)
@@ -107,6 +120,7 @@ def createSkolemfunction(inputfile_name, Xvar,Yvar):
 
 
 def createErrorFormula(Xvar, Yvar, UniqueVars, verilog_formula):
+	print("********* createErrorFormula ********")
 	inputformula = '('
 	inputskolem = '('
 	inputerrorx = 'module MAIN ('
@@ -159,6 +173,7 @@ def addSkolem(error_content,inputfile_name):
 	f.close()
 
 def createSkolem(candidateSkf, Xvar, Yvar, UniqueVars, UniqueDef, inputfile_name):
+	print("*********** createSkolem ***********")
 	tempOutputFile = tempfile.gettempdir() + '/' + inputfile_name + "_skolem.v"  # F(X,Y')
 	inputstr = 'module SKOLEMFORMULA ('
 	declarestr = ''
