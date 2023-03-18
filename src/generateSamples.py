@@ -69,15 +69,16 @@ def generatesample(args, num_samples, sampling_cnf, inputfile_name, weighted):
 
 	tempoutputfile = tempfile.gettempdir() + '/' + inputfile_name + "_.txt"
 
+	manthan_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 	if weighted:
-		cmd = "./dependencies/cryptominisat5 -n1 --sls 0 --comps 0"
+		cmd = f"{manthan_dir}/dependencies/cryptominisat5 -n1 --sls 0 --comps 0"
 		cmd += " --restart luby  --nobansol --maple 0 --presimp 0"
 		cmd += " --polar weight --freq 0.9999 --verb 0 --scc 0"
 		cmd += " --random %s --maxsol %s > /dev/null 2>&1" % (args.seed, int(num_samples))
 		cmd += " %s" % (tempcnffile)
 		cmd += " --dumpresult %s " % (tempoutputfile)
 	else:
-		cmd = "./dependencies/cryptominisat5 --restart luby"
+		cmd = f"{manthan_dir}/dependencies/cryptominisat5 --restart luby"
 		cmd += " --maple 0 --verb 0 --nobansol"
 		cmd += " --scc 1 -n1 --presimp 0 --polar rnd --freq 0.9999"
 		cmd += " --random %s --maxsol %s" % (args.seed, int(num_samples))
